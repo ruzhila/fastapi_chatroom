@@ -11,16 +11,77 @@
 
 <body>
     <script>
+        let ws = null;
+        function showText(sender, eventType, text) {
+            const div = document.createElement('div');
+            div.innerHTML = `<p class="flex gap-x-2">
+                <span>${sender}: </span>
+                <span>${text}</span>
+            </p>`;
+            document.getElementById('logs').appendChild(div);
+        }
+
+        function doJoin() {
+            const userName = document.getElementById('username').value;
+            if (!userName) {
+                showText('system', 'error', 'Please input your name');
+                return;
+            }
+            ws = new WebSocket('/chat?user_id=' + encodeURIComponent(userName));
+            ws.onclose = function (evt) {
+                showText('system', 'error', 'Connection closed');
+                document.getElementById('signin').classList.remove('hidden');
+                document.getElementById('sendtext').classList.add('hidden');
+                ws = null;
+            };
+            ws.onmessage = function (evt) {
+                const { sender, event, text } = JSON.parse(evt.data);
+                showText(sender, event, text);
+            };
+            ws.onopen = function (evt) {
+                showText('system', 'info', 'Connected');
+                document.getElementById('signin').classList.add('hidden');
+                document.getElementById('sendtext').classList.remove('hidden');
+            };
+        }
+        function doSend() {
+            const text = document.getElementById('text').value;
+            if (!text || !ws) {
+                return;
+            }
+            ws.send(text);
+            document.getElementById('text').value = '';
+        }
 
     </script>
     <div class="mt-4 mx-4">
         <h1>Websocket Chatroom by <a href="https://ruzhila.cn">ruzhila.cn</a></h1>
         <hr>
-        <div>
-
+        <div class="mt-2">
+            <div class="flex flex-col w-1/2 h-screen flex">
+                <div class="h-96 w-full border-2">
+                    <div id="logs" class="flex h-96 flex-col gap-y-1 overflow-y-auto">
+                        <p class="flex gap-x-2">
+                            <span>🎉 Have a nice day (ruzhila.cn) </span>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex flex-col w-1/2 mt-2">
+                    <div id="signin" class="">
+                        <input type="text" id="username" placeholder="Your name"
+                            class="border-2 border-gray-300 p-1 rounded-lg">
+                        <button id="login" class="bg-cyan-500 text-white p-1 rounded-lg"
+                            onclick="doJoin()">Join</button>
+                    </div>
+                    <div id="sendtext" class="flex gap-x-2 hidden">
+                        <input type="text" id="text" placeholder="Say text here"
+                            class="border-2 border-gray-300 p-1 rounded-lg w-full">
+                        <button id="send" class="bg-cyan-500 text-white p-1 rounded-lg" onclick="doSend()">Send</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
 </body>
 
 </html>

@@ -1,5 +1,5 @@
-from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, HTTPException,  WebSocket, WebSocketDisconnect, Query
+from fastapi.responses import FileResponse
 import logging
 import uvicorn
 import time
@@ -9,7 +9,6 @@ import datetime
 logger = logging.getLogger(__file__)
 
 app = FastAPI()
-app.mount("/", app=StaticFiles(directory="./assets", html=True), name="assets")
 clients: dict[str, 'Client'] = {}
 room_queue: asyncio.Queue['Message'] = asyncio.Queue()
 
@@ -22,7 +21,7 @@ class Message:
         self.event_type = event_type
 
     def to_json(self):
-        return {"sender": self.sender, "text": self.text,  "ctime": str(self.ctime), "event_type": self.event_type}
+        return {"sender": self.sender, "text": self.text,  "ctime": str(self.ctime), "event": self.event_type}
 
 
 class Client:
@@ -45,7 +44,7 @@ class Client:
             message = await self.tx.get()
             if not message:
                 return
-            await ws.send_text(message.to_json())
+            await ws.send_json(message.to_json())
 
     async def serve(self, ws: WebSocket, tx: asyncio.Queue[Message]):
         try:
@@ -59,7 +58,7 @@ class Client:
             ws.close()
 
 
-@app.get("/chat")
+@app.websocket("/chat")
 async def chat(ws: WebSocket, user_id: str = Query(title="User ID", description="User ID")):
     if user_id.startswith("@"):
         return HTTPException(status_code=400, detail="User ID should not start with @")
@@ -88,6 +87,11 @@ async def get_clients():
     return clients.keys()
 
 
+@app.get("/")
+async def read_index():
+    return FileResponse('./assets/index.html')
+
+
 async def dispatch_message():
     logger.info("start dispatch_message")
     while True:
@@ -108,6 +112,7 @@ async def run_app():
     server = uvicorn.Server(uvicorn.Config(app, host='0.0.0.0', port=8000))
 
     await server.serve()
+
 
 if __name__ == "__main__":
     try:
