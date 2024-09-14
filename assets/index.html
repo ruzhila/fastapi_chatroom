@@ -7,22 +7,58 @@
     <title>Chatroom with FastAPI </title>
     <script src="//cdn.tailwindcss.com?plugins=forms"></script>
     <link href="//cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
+
+    <style type="text/tailwindcss">
+        .input { @apply border border-gray-300 focus:border-gray-500 placeholder:text-gray-400 placeholder:text-sm bg-white focus:bg-white
+            flex-grow p-1 px-3 rounded-md ring-0 hover:ring-0 focus:ring-0}
+    </style>
 </head>
 
 <body>
     <script>
         let ws = null;
+        let userId = null
         function showText(sender, eventType, text) {
+            console.log(sender, eventType, text);
             const div = document.createElement('div');
-            div.innerHTML = `<p class="flex gap-x-2">
-                <span>${sender}: </span>
-                <span>${text}</span>
-            </p>`;
+            div.innerHTML = `<div class="mt-1">
+                <p class="flex items-center w-full justify-center gap-x-2 text-sm text-center text-gray-400 ${eventType === 'info' || eventType === 'join' || eventType === 'leave' ? 'block' : 'hidden'}">
+                    <span>${sender}:</span>
+                    <span class="text-gray-500">${text}</span>
+                </p>
+
+                 <div class="flex justify-end pl-10 items-end w-full text-sm mt-2 ${eventType === 'user' && sender===userId ? 'block' : 'hidden'}">
+                   <div class="flex flex-col items-end justify-end w-full gap-y-1">
+                    
+                     <span class="bg-gray-900 text-white px-3 py-1.5 rounded-t-full rounded-l-full">${text}</span>
+                  </div>
+                  <p class="flex justify-center items-center rounded-full bg-indigo-50 text-indigo-600 capitalize shadow ml-2 border border-indigo-600 w-8 h-8 overflow-hidden">${(sender)?.trim()?.charAt(0) || 'R'}</p>
+                </div>
+                
+                <div class="flex justify-start w-full">
+                  <div class="pr-10">
+                     <div  class="flex justify-start items-end w-full text-sm mt-2 ${eventType === 'user'&& sender!==userId ? 'block' : 'hidden'}">
+
+                    <p
+                    class="flex justify-center items-center shrink-0 rounded-full bg-indigo-50 text-indigo-600 capitalize shadow mr-2 border border-indigo-600 w-8 h-8 overflow-hidden">
+                    ${(sender)?.trim()?.charAt(0) || 'R'}
+                   </p>
+
+                   <div class="flex flex-col items-end justify-end w-full gap-y-1">
+                      <span class="bg-white border border-gray-500 text-gray-900 px-3 py-1 rounded-t-full rounded-r-full">${text}</span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>`;
             document.getElementById('logs').appendChild(div);
         }
 
         function doJoin() {
             const userName = document.getElementById('username').value;
+            userId = userName;
             if (!userName) {
                 showText('system', 'error', 'Please input your name');
                 return;
@@ -52,31 +88,49 @@
             ws.send(text);
             document.getElementById('text').value = '';
         }
-
     </script>
-    <div class="mt-4 mx-4">
-        <h1>Websocket Chatroom by <a href="https://ruzhila.cn">ruzhila.cn</a></h1>
-        <hr>
-        <div class="mt-2">
-            <div class="flex flex-col w-1/2 h-screen flex">
-                <div class="h-96 w-full border-2">
-                    <div id="logs" class="flex h-96 flex-col gap-y-1 overflow-y-auto">
-                        <p class="flex gap-x-2">
-                            <span>🎉 Have a nice day (ruzhila.cn) </span>
+
+    <div class="bg-gradient-to-tr from-sky-50 to-indigo-50 h-screen overflow-hidden">
+        <header class="bg-gray-900 py-4 px-5 lg:p-4 lg:px-10 text-white sticky top-0 z-20">
+            <div class="flex w-full justify-between items-center">
+                <p class="">
+                    <span>Websocket Chatroom by</span>
+                    <a href="https://ruzhila.cn">ruzhila.cn</a>
+                </p>
+                <a target="_blank" href="https://github.com/ruzhila/voiceapi" class="hover:cursor-pointer">
+                    <svg t="1724996252746" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                        xmlns="http://www.w3.org/2000/svg" p-id="" width="25" height="25">
+                        <path
+                            d="M512 12.64c-282.752 0-512 229.216-512 512 0 226.208 146.72 418.144 350.144 485.824 25.6 4.736 35.008-11.104 35.008-24.64 0-12.192-0.48-52.544-0.704-95.328-142.464 30.976-172.512-60.416-172.512-60.416-23.296-59.168-56.832-74.912-56.832-74.912-46.464-31.776 3.52-31.136 3.52-31.136 51.392 3.616 78.464 52.768 78.464 52.768 45.664 78.272 119.776 55.648 148.992 42.56 4.576-33.088 17.856-55.68 32.512-68.48-113.728-12.928-233.28-56.864-233.28-253.024 0-55.904 20-101.568 52.768-137.44-5.312-12.896-22.848-64.96 4.96-135.488 0 0 43.008-13.76 140.832 52.48 40.832-11.36 84.64-17.024 128.16-17.248 43.488 0.192 87.328 5.888 128.256 17.248 97.728-66.24 140.64-52.48 140.64-52.48 27.872 70.528 10.336 122.592 5.024 135.488 32.832 35.84 52.704 81.536 52.704 137.44 0 196.64-119.776 239.936-233.792 252.64 18.368 15.904 34.72 47.04 34.72 94.816 0 68.512-0.608 123.648-0.608 140.512 0 13.632 9.216 29.6 35.168 24.576 203.328-67.776 349.856-259.616 349.856-485.76 0-282.784-229.248-512-512-512z"
+                            fill="#ffffff"></path>
+                    </svg>
+                </a>
+            </div>
+        </header>
+
+
+
+        <div class="max-w-4xl mx-auto mt-10">
+            <div class="flex flex-col flex-grow mx-10 border border-gray-300 rounded bg-white">
+                <div class="w-full p-4">
+                    <div id="logs" class="flex h-[calc(100vh-20rem)] flex-col gap-y-1 overflow-y-auto">
+                        <p class="flex justify-center">
+                            <span>🎉 Have a nice day (ruzhila.cn)</span>
                         </p>
                     </div>
                 </div>
-                <div class="flex flex-col w-1/2 mt-2">
-                    <div id="signin" class="">
-                        <input type="text" id="username" placeholder="Your name"
-                            class="border-2 border-gray-300 p-1 rounded-lg">
-                        <button id="login" class="bg-cyan-500 text-white p-1 rounded-lg"
+                <div class="flex mt-4 w-full border-t border-gray-200 py-6 px-4 rounded-b-md">
+                    <div id="signin" class="flex w-full items-center gap-x-2">
+                        <input type="text" id="username" placeholder="Your name" class="input">
+                        <button id="login" class="bg-gray-900 text-white p-1 px-3 rounded-md hover:bg-opacity-90"
                             onclick="doJoin()">Join</button>
                     </div>
-                    <div id="sendtext" class="flex gap-x-2 hidden">
-                        <input type="text" id="text" placeholder="Say text here"
-                            class="border-2 border-gray-300 p-1 rounded-lg w-full">
-                        <button id="send" class="bg-cyan-500 text-white p-1 rounded-lg" onclick="doSend()">Send</button>
+
+                    <div id="sendtext" class="flex w-full items-center gap-x-2 hidden">
+                        <input type="text" id="text" placeholder="Say text here" class="input">
+
+                        <button id="send" class="bg-gray-900 text-white p-1 px-3 rounded-md hover:bg-opacity-90"
+                            onclick="doSend()">Send</button>
                     </div>
                 </div>
             </div>
